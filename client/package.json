@@ -1,0 +1,36 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "0.13.1",
+    "lodash": "^4.17.11",
+    "moment": "^2.24.0",
+    "package.json": "^2.0.1",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-router": "^3.2.0",
+    "react-scripts": "2.1.1",
+    "redux": "^4.0.1",
+    "semantic-ui-less": "^2.4.1",
+    "semantic-ui-react": "^0.83.0",
+    "web3": "^1.0.0-beta.37"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "bridge": "./node_modules/.bin/ethereum-bridge -a 9 -H 127.0.0.1 -p 9545 --dev"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "homepage": "./",
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
