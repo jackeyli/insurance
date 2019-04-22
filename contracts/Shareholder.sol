@@ -1,5 +1,7 @@
 pragma solidity ^0.5.0;
+import "./library/SafeMath.sol";
 contract Shareholder {
+   using SafeMath for uint256;
    address payable owner;
    uint public totalShareholderToken;
    uint public startTimestamp;
@@ -41,14 +43,14 @@ contract Shareholder {
        if(rate > 1024) {
             rate = 1024;
        }
-       uint holder = token * 1024/rate/100000000000000;
-       totalShareholderToken += holder;
+       uint holder = token.mul(1024).div(rate).div(100000000000000);
+       totalShareholderToken = totalShareholderToken.add(holder);
        ShareholderSnapShot[] storage snap = shareholderChangingHist[theShareOwner];
        if(snap.length == 0){
            snap.push(ShareholderSnapShot({myToken:holder,timestamp:now}));
        } else {
           ShareholderSnapShot storage last = snap[snap.length - 1];
-          snap.push(ShareholderSnapShot({myToken:last.myToken + holder,timestamp:now}));
+          snap.push(ShareholderSnapShot({myToken:last.myToken.add(holder),timestamp:now}));
        }
        return true;
    }
@@ -60,12 +62,12 @@ contract Shareholder {
         require(snapFrom.length > 0);
         ShareholderSnapShot memory lastOfFrom = snapFrom[snapFrom.length - 1];
         require(holder > 0 && lastOfFrom.myToken >= holder);
-        snapFrom.push(ShareholderSnapShot({myToken:lastOfFrom.myToken + holder,timestamp:now}));
+        snapFrom.push(ShareholderSnapShot({myToken:lastOfFrom.myToken.add(holder),timestamp:now}));
         if(snapTo.length == 0) {
             snapTo.push(ShareholderSnapShot({myToken:holder,timestamp:now}));
         } else {
             ShareholderSnapShot memory lastOfTo = snapTo[snapTo.length - 1];
-            snapTo.push(ShareholderSnapShot({myToken:lastOfTo.myToken + holder,timestamp:now}));
+            snapTo.push(ShareholderSnapShot({myToken:lastOfTo.myToken.add(holder),timestamp:now}));
         }
         return true;
    }
@@ -117,7 +119,7 @@ contract Shareholder {
                    }
                }
            }
-           return profit * myToken / totalToken;
+           return profit.mul(myToken).div(totalToken);
       }
    function isYearClaimedProfit(uint year) public view returns(bool) {
        return shareholderClaimHistory[msg.sender][year];
@@ -126,7 +128,7 @@ contract Shareholder {
        require(shareholderClaimHistory[msg.sender][year] == false);
        uint myShareOfProfit = getMyAmtOfShareOfProfit(year);
        shareholderClaimHistory[msg.sender][year] = true;
-       balances[msg.sender] += myShareOfProfit;
+       balances[msg.sender] = balances[msg.sender].add(myShareOfProfit);
    }
    function getMyBalance() public view returns(uint){
        return balances[msg.sender];

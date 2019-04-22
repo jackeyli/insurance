@@ -22,7 +22,7 @@ export class Insure extends Component {
                 let myEvent = await waitForEvent(this.props.global.contract, 'LogCheckValid',
                     (t) => {
                         return t.returnValues.flightNo == flightNo
-                    }, blockNumber, 5,60);
+                    }, blockNumber, 5,90);
                 if (myEvent.returnValues.result.length > 0) {
                     this.setState({
                         checkValidMsg: {

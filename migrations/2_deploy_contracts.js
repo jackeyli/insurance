@@ -4,6 +4,7 @@ const usingOraclize =  artifacts.require('./usingOraclize.sol');
 const strings = artifacts.require('./stringutils/strings.sol');
 const dateTime = artifacts.require('./library/DateTime.sol');
 const shareHolder = artifacts.require('./Shareholder.sol');
+const safeMath = artifacts.require('./library/SafeMath.sol');
 /*module.exports = deployer =>
   contracts.map(contract => 
       deployer.deploy(contract))
@@ -15,11 +16,13 @@ const shareHolder = artifacts.require('./Shareholder.sol');
 async function doDeploy(deployer, network) {
     await deployer.deploy(strings);
     await deployer.deploy(dateTime);
+    await deployer.deploy(safeMath);
     await deployer.link(strings, flightTest);
     await deployer.link(dateTime, flightTest);
     await deployer.deploy(usingOraclize);
     let flightTestContract = await deployer.deploy(flightTest,{gas: 6721975});
     console.log(flightTestContract.address);
+    await deployer.link(safeMath, shareHolder);
     let holderContract = await deployer.deploy(shareHolder,flightTestContract.address);
     console.log(flightTestContract.address);
     await flightTestContract.setHolderContract(holderContract.address);

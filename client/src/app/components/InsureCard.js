@@ -65,10 +65,14 @@ export class InsureCard extends Component{
                     </div>
                     <div>
                         <span>Late for half an hour when arriving</span>
-                        <Header as="h3" style={{margin:5}}>You Get {5 * this.state.amount} ETH</Header>
+                        <Header as="h3" style={{margin:5}}>You Get {2 * this.state.amount} ETH</Header>
                     </div>
                     <div>
                         <span>Late for an hour when arriving</span>
+                        <Header as="h3" style={{margin:5}}>You Get {5 * this.state.amount} ETH</Header>
+                    </div>
+                    <div>
+                        <span>Late for two hour when arriving</span>
                         <Header as="h3" style={{margin:5}}>You Get {10 * this.state.amount} ETH</Header>
                     </div>
                 </Card.Meta>

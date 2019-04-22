@@ -7,13 +7,13 @@ export class OrderInformation extends Component {
     componentDidMount = async()=>{
         try {
             this.setState({isLoading:true});
-            debugger;
             let order = await this.props.global.contract.methods
                     .getOrderInfo(this.props.param.order_id)
                     .call({from: this.props.global.accounts[0]}),
                 flightStatus = await this.props.global.contract.methods
                     .getFlightStatus(order.flightNo, order.expectedDepatureDate)
                     .call({from: this.props.global.accounts[0]});
+            debugger;
             if (flightStatus.checked) {
                 this.updateOrder(order.payoutAmount, flightStatus.expectedArriveDate, flightStatus.actArriveDate);
             }
@@ -36,10 +36,12 @@ export class OrderInformation extends Component {
                 .format("YYYY-MM-DD HH:mm"),
             delay = ((actArrSec - expArrSec) > 0 ? (actArrSec - expArrSec) : 0);
         if(compensateAmt === undefined) {
-            if (delay >= 3600) {
+            if(delay >= 7200) {
                 compensateAmt = payOutAmt * 10;
-            } else if (delay >= 1800) {
+            } else if (delay >= 3600) {
                 compensateAmt = payOutAmt * 5;
+            } else if (delay >= 1800) {
+                compensateAmt = payOutAmt * 2;
             } else {
                 compensateAmt = payOutAmt / 10;
             }
@@ -73,14 +75,14 @@ export class OrderInformation extends Component {
 
                 await this.props.global.contract.methods.requestUpdate(this.props.param.order_id).send({
                     from: this.props.global.accounts[0],
-                    gas: 200000,
+                    gas: 300000,
                     value:this.props.global.web3.utils.toWei("0.008",'ether')
                 });
                 let myEvent = await waitForEvent(this.props.global.contract, 'LogFlightStatusUpdate',
                     (t) => {
                         return t.returnValues.flightNo == flightNo &&
                             t.returnValues.expectedDepatureDate == expectedDepatureDate
-                    }, blockNumber, 5, 90);
+                    }, blockNumber, 5, 120);
                 if(myEvent.returnValues.isSuccess) {
                     this.updateOrder(this.state.payoutAmount, myEvent.returnValues.expectedArriveDate, myEvent.returnValues.actArriveDate);
                     this.setState({showMsg: true, messageType: 'positive', messageContent: 'Update order success.'});

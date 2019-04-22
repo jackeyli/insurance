@@ -14,7 +14,6 @@ const _getWeb3 = async(resolve,reject)=>{
             // Request account access if needed
             await window.ethereum.enable();
             // Acccounts now exposed
-            debugger;
             resolve(web3);
         } catch (error) {
             reject(error);
@@ -26,7 +25,6 @@ const _getWeb3 = async(resolve,reject)=>{
         const web3 = window.web3;
         console.log("Injected web3 detected.");
         resolve(web3)
-        debugger;
     }
     // Fallback to localhost; use dev console port by default...
     else {
@@ -36,7 +34,6 @@ const _getWeb3 = async(resolve,reject)=>{
         const web3 = new Web3(provider);
         console.log("No web3 instance injected, using Local web3.");
         resolve(web3)
-        debugger;
     }
 }
 export const getWeb3AfterInitialized =  ()=>{

@@ -111,7 +111,7 @@ contract FlightTest is usingOraclize {
    function insure(string memory flightNo,uint expDate) public payable {
         require(msg.value >= priceLimit_Low && msg.value <= priceLimit_High);
         string memory expectedDate = DateTime.uintToDateString(expDate);
-        require(DateTime.comparingToTimeStamp(now + 86400,expectedDate) < 0,"Please insure 48 hours before depature");
+        //require(DateTime.comparingToTimeStamp(now + 86400,expectedDate) < 0,"Please insure 48 hours before depature");
         recordOrder(flightNo,expDate,expectedDate,msg.sender);
    }
    function getShareholderContractAddr() public view returns(address) {
@@ -171,7 +171,7 @@ contract FlightTest is usingOraclize {
    function dividend() public returns(bool){
         (uint16 _year,uint8 _month,,,,,) = DateTime.parseTimestamp(now);
         require((dividendYearList.length == 0 || dividendYearList[dividendYearList.length - 1].year < _year)
-        && _month == 12);
+        && _month == 4);
         uint token = holderContract.getShareToken(msg.sender);
         require(token > 0);
         if(unClaimedAmount * 9 / 10 + balanceOffset < address(this).balance) {
@@ -201,15 +201,20 @@ contract FlightTest is usingOraclize {
        } else {
           unClaimedAmount = 0;
        }
-       if(status[order.flightNo][order.expectedDepatureDate].delaySeconds >= 3600) {
+       if(status[order.flightNo][order.expectedDepatureDate].delaySeconds >= 7200) {
             compensateValue = order.payoutAmount * 10;
             emit LogCompensation(true,order_id,"",order.user,compensateValue);
-       } else if(status[order.flightNo][order.expectedDepatureDate].delaySeconds >= 1800) {
+       } else {
+         if(status[order.flightNo][order.expectedDepatureDate].delaySeconds >= 3600) {
             compensateValue = order.payoutAmount * 5;
             emit LogCompensation(true,order_id,"",order.user,compensateValue);
-       } else {
+         } else if(status[order.flightNo][order.expectedDepatureDate].delaySeconds >= 1800) {
+            compensateValue = order.payoutAmount * 2;
+            emit LogCompensation(true,order_id,"",order.user,compensateValue);
+         } else {
             compensateValue = order.payoutAmount / 10;
             emit LogCompensation(false,order_id,"",order.user,compensateValue);
+         }
        }
        accounts[order.user].balance += compensateValue;
        balanceOffset += compensateValue;

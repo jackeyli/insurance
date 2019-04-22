@@ -6,8 +6,8 @@ import {Insure} from "./app/pages/Insure";
 import {Home} from './app/Home';
 import {PageRouter,PageRoute} from "./app/components/router/pageRouter";
 import {getWeb3AfterInitialized} from "./utils/getWeb3.js";
-import FlightTest from "./contracts/FlightTest";
-import Shareholder from "./contracts/Shareholder";
+import FlightTest from "./contracts/FlightTest.json";
+import Shareholder from "./contracts/Shareholder.json";
 import MessageStore from "./app/components/store/MessageStore";
 import './style.min.css';
 
@@ -17,13 +17,13 @@ class AppClass extends Component{
         try{
             let web3 = await getWeb3AfterInitialized();
             // Use web3 to get the user's accounts.
-            let accounts = await web3.eth.getAccounts();
-            let networkId = 4447,
+            let accounts = await web3.eth.getAccounts(),
+                networkId = 5777,
                 instance = await new web3.eth.Contract(FlightTest.abi,
-                    // "0xe58847366a56b10ff1776630096d2c9c5fda4d66"),
+                         //"0xb4fd9122180369c0c0478b1899028e0ad5e3a953"),
                     FlightTest.networks[networkId].address),
                 shareholderContract = await new web3.eth.Contract(Shareholder.abi,
-                    // "0x4eb33f479c614ada28fac3b2098565ad5795239b");
+                     //"0xf00d711d59a7d85b1f88213f66344f25b994cebb");
                     Shareholder.networks[networkId].address);
             this.setState({web3:web3,accounts:accounts,contract:instance,
                 shareholderContract:shareholderContract});
@@ -39,7 +39,6 @@ class AppClass extends Component{
         });
     }
     render (){
-        debugger;
         if(!this.state.web3) {
             return null;
         } else {
