@@ -3,7 +3,8 @@ import {Button, Label, Segment,Input,Icon,Grid,Message,Checkbox,Header,Card} fro
 export class InsureCard extends Component{
     state = {amtExceedLimit:false,amount:this.props.amount}
     amountChange = ()=> {
-        let amount = +this.inputAmount.inputRef.value;
+        let amount = +(+this.inputAmount.inputRef.value).trunc(9).toFixed(9);
+        this.inputAmount.inputRef.value = amount.toFixedNoZero(9);
         this.setState({amount:amount});
         if(amount < this.props.minAmt){
             setTimeout(()=>{
@@ -61,19 +62,19 @@ export class InsureCard extends Component{
                 <Card.Meta>
                     <div>
                         <span>Not late</span>
-                        <Header as="h3" style={{margin:5}}>You Get {this.state.amount / 10} ETH</Header>
+                        <Header as="h3" style={{margin:5}}>You Get {(this.state.amount / 10).toFixedNoZero(9)} ETH</Header>
                     </div>
                     <div>
                         <span>Late for half an hour when arriving</span>
-                        <Header as="h3" style={{margin:5}}>You Get {2 * this.state.amount} ETH</Header>
+                        <Header as="h3" style={{margin:5}}>You Get {(2 * this.state.amount).toFixedNoZero(9)} ETH</Header>
                     </div>
                     <div>
                         <span>Late for an hour when arriving</span>
-                        <Header as="h3" style={{margin:5}}>You Get {5 * this.state.amount} ETH</Header>
+                        <Header as="h3" style={{margin:5}}>You Get {(5 * this.state.amount).toFixedNoZero(9)} ETH</Header>
                     </div>
                     <div>
                         <span>Late for two hour when arriving</span>
-                        <Header as="h3" style={{margin:5}}>You Get {10 * this.state.amount} ETH</Header>
+                        <Header as="h3" style={{margin:5}}>You Get {(10 * this.state.amount).toFixedNoZero(9)} ETH</Header>
                     </div>
                 </Card.Meta>
             </Card.Content>

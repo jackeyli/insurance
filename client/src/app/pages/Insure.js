@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import {Button, Label, Segment,Input,Icon,Grid,Message,Checkbox,Card,Header} from "semantic-ui-react";
-import {waitForEvent} from '../utils/utils';
+import {callMethod, waitForEvent} from '../utils/utils';
 import _ from 'lodash';
+import moment from 'moment';
 import {InsureCard} from "../components/InsureCard";
 export class Insure extends Component {
     state = {isLoading:undefined,checkValidMsg:{isFlightValid:true,showCheckMessage:false,content:null},
@@ -10,35 +11,40 @@ export class Insure extends Component {
         let flightNo = this.inputflightNumber.inputRef.value,
             gasPrice = await this.props.global.web3.eth.getGasPrice();
         this.setState({isLoading:true});
+        let isSupported = await this.props.global.contract.methods.isSupported(flightNo).call();
         try {
-            await this.props.global.contract.methods
-                .checkValidFlight(flightNo).send({
+            let isSupported = await this.props.global.contract.methods.isSupported(flightNo).call();
+            if(!isSupported)
+            {
+                await callMethod(this.props.global.contract.methods
+                    .checkValidFlight(flightNo),{
                     from: this.props.global.accounts[0],
-                    gas: 240000,
-                    value:this.props.global.web3.utils.toWei("0.004",'ether')
+                    value: this.props.global.web3.utils.toWei("0.004", 'ether')
                 });
-            let blockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
-            try {
-                let myEvent = await waitForEvent(this.props.global.contract, 'LogCheckValid',
-                    (t) => {
-                        return t.returnValues.flightNo == flightNo
-                    }, blockNumber, 5,90);
-                if (myEvent.returnValues.result.length > 0) {
-                    this.setState({
-                        checkValidMsg: {
-                            isFlightValid: true, showCheckMessage: true, content:
-                                ('Flight ' + flightNo + ' is Supported')
-                        }
-                    });
-                } else {
-                    this.setState({
-                        checkValidMsg: {
-                            isFlightValid: false, showCheckMessage: true, content:
-                                ('Flight ' + flightNo + ' is not supported')
-                        }
-                    });
+                let blockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
+                let myEvent = null;
+                try {
+                    myEvent = await waitForEvent(this.props.global.contract, 'LogCheckValid',
+                        (t) => {
+                            return t.returnValues.flightNo == flightNo
+                        }, blockNumber, 5, 90);
+                    if (myEvent.returnValues.result.length > 0) {
+                        isSupported = true;
+                    } else {
+                        isSupported = false;
+                    }
+                } catch (e) {
+                    isSupported = false;
                 }
-            } catch (e) {
+            }
+            if(isSupported){
+                this.setState({
+                    checkValidMsg: {
+                        isFlightValid: true, showCheckMessage: true, content:
+                            ('Flight ' + flightNo + ' is Supported')
+                    }
+                });
+            } else {
                 this.setState({
                     checkValidMsg: {
                         isFlightValid: false, showCheckMessage: true, content:
@@ -66,6 +72,10 @@ export class Insure extends Component {
             flightDate = this.inputFlightDate.inputRef.value,
             timeDatas = flightDate.split("-"),
             dateUint = ((+timeDatas[0]) << 16) + ((+timeDatas[1]) << 8) + (+timeDatas[2]);
+            if(moment().add(48,'hours').isAfter(moment(flightDate,'YYYY-MM-DD'))) {
+                this.setState({messageType:'negative',messageContent:'Please Insure 48 hours before departure'});
+                return;
+            }
         try{
             if(this.state.amount < 0.01 || this.state.amount > 10) {
                 this.setState({messageType:'negative',messageContent:'The amount should be more than 0.01 and less than 10'});
@@ -73,10 +83,9 @@ export class Insure extends Component {
             }
             this.setState({isLoading:true});
             let blockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
-                await this.props.global.contract.methods.insure(flightNo,dateUint).send(
+                await callMethod(this.props.global.contract.methods.insure(flightNo,dateUint),
                     {
                         from: this.props.global.accounts[0],
-                        gas: 300000,
                         value: this.props.global.web3.utils.toWei(this.state.amount.toString(), 'ether')
                     });
             this.setState({messageType:'positive',
@@ -149,7 +158,7 @@ export class Insure extends Component {
                            Please make sure you input the right date.
                     </Header>
                     <Checkbox ref={(checkBoxticketBought)=>{this.checkBoxticketBought = checkBoxticketBought}} onChange={(event,element)=>{this.setState({ticketBought:element.checked},this.checkIfAllowToSubmit);}}label='I swear I have bought the ticket' style={{margin:10}}/>
-                                <Card>
+                                <Card style={{margin:10}}>
                                     <Card.Content>
                                         <Card.Header>
                                             How to claim compensation ?

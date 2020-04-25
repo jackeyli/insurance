@@ -7,10 +7,7 @@ import MessageStore from "./components/store/MessageStore";
 export class Home extends Component {
     state={contractBalance:0,contractTotalProfit:0,shareToken:0}
     switchPage = (pageName,params)=>{
-        MessageStore.dispatch({
-            type:'switchPage',
-            data:{page:pageName,params:params}
-        });
+        window.history.pushState(params,null,pageName)
     }
     componentDidMount = async()=>{
         let me = this;
@@ -42,17 +39,17 @@ export class Home extends Component {
                         <Grid stackable >
                             <Grid.Row>
                                 <Grid.Column style={{width:'auto'}}>
-                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == 'AccountInformation'}
-                                        onClick={()=>{this.switchPage("AccountInformation")}}>
+                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == '/AccountInformation'}
+                                        onClick={()=>{this.switchPage("/AccountInformation")}}>
                                             Account Information
                                     </Button>
-                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == 'Insure'}
-                                        onClick={()=>{this.switchPage("Insure")}}>
+                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == '/Insure'}
+                                        onClick={()=>{this.switchPage("/Insure")}}>
                                         Insure
                                     </Button>
-                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == 'Donate'}
-                                        onClick={()=>{this.switchPage("Donate")}}>
-                                        Donate
+                                    <Button style={{margin:'5px'}} toggle active={this.props.currentPageName == '/Donate'}
+                                        onClick={()=>{this.switchPage("/Donate")}}>
+                                        Invest
                                     </Button>
                                 </Grid.Column>
                             </Grid.Row>
@@ -69,15 +66,15 @@ export class Home extends Component {
                                                     </Grid.Column>
                                                     <Grid.Column>
                                                         <Statistic size="mini">
-                                                            <Statistic.Value>{this.props.global.web3.utils.fromWei(this.state.contractBalance.toString(),
-                                                                'ether')} ETH</Statistic.Value>
+                                                            <Statistic.Value>{(+this.props.global.web3.utils.fromWei(this.state.contractBalance.toString(),
+                                                                'ether')).trunc(9).toFixedNoZero(9)} ETH</Statistic.Value>
                                                             <Statistic.Label>total balance</Statistic.Label>
                                                         </Statistic>
                                                     </Grid.Column>
                                                     <Grid.Column>
                                                         <Statistic size="mini">
-                                                            <Statistic.Value>{this.props.global.web3.utils.fromWei(this.state.contractTotalProfit.toString(),
-                                                                'ether')} ETH</Statistic.Value>
+                                                            <Statistic.Value>{(+this.props.global.web3.utils.fromWei(this.state.contractTotalProfit.toString(),
+                                                                'ether')).trunc(9).toFixedNoZero(9)} ETH</Statistic.Value>
                                                             <Statistic.Label>total undividended profit (Estimated)</Statistic.Label>
                                                         </Statistic>
                                                     </Grid.Column>

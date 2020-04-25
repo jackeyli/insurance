@@ -3,4 +3,18 @@
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="JSX" />
   </component>
+  <component name="ProjectPlainTextFileTypeManager">
+    <file url="file://$PROJECT_DIR$/client/src/contracts/Buffer.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/CBOR.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/DateTime.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/FlightTest.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/Migrations.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/OraclizeAddrResolverI.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/OraclizeI.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/SafeMath.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/Shareholder.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/solcChecker.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/strings.json" />
+    <file url="file://$PROJECT_DIR$/client/src/contracts/usingOraclize.json" />
+  </component>
 </project>

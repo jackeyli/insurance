@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import {Button,Segment,Label,List,Grid,Input,Table} from 'semantic-ui-react';
 import _ from 'lodash';
 import MessageStore from "../components/store/MessageStore";
+import {callMethod} from "../utils/utils";
 export class AccountInformation extends Component {
     state={account:{address:'0x0',balance:100,share:'90%',orders:[{order_id:'ss',isDone:true}]}}
     componentDidMount = async()=>{
@@ -13,8 +14,8 @@ export class AccountInformation extends Component {
     withDraw = async ()=>{
         let withDrawBalance = this.inputWithdraw.inputRef.value,
             wei = this.props.global.web3.utils.toWei(withDrawBalance,'ether');
-        await this.props.global.contract.methods.withDrawBalance(wei).send({
-            from:this.props.global.accounts[0],gas:200000});
+        await callMethod(this.props.global.contract.methods.withDrawBalance(wei),
+            {from:this.props.global.accounts[0]});
         await this.refresh();
     }
     refresh = async ()=>{
@@ -30,13 +31,10 @@ export class AccountInformation extends Component {
         this.setState({account:account});
     }
     switchPage = (pageName,params)=>{
-        MessageStore.dispatch({
-            type:'switchPage',
-            data:{page:pageName,params:params}
-        });
+        window.history.pushState(params,null,pageName)
     }
     viewOrder = (order_id)=>{
-        this.switchPage("OrderInformation",{order_id:order_id});
+        this.switchPage("/OrderInformation",{order_id:order_id});
     }
     render() {
         return (
@@ -57,7 +55,7 @@ export class AccountInformation extends Component {
                                      Balance:
                                  </Label>
                                  <br/>
-                                 {this.props.global.web3.utils.fromWei(this.state.account.balance.toString(),'ether')} ETH
+                                 {(+this.props.global.web3.utils.fromWei(this.state.account.balance.toString(),'ether')).trunc(9).toFixedNoZero(9)} ETH
                              </Grid.Column>
                          </Grid.Row>
                          <Grid.Row>
@@ -100,7 +98,7 @@ export class AccountInformation extends Component {
                                             {t.order_id}
                                         </Table.Cell>
                                         <Table.Cell>
-                                            {(t.isDone ? (<Label style={{marginLeft:10}} color="red" horizontal>closed</Label>):(<Label style={{margin:10}} color="olive" horizontal>open</Label>))}
+                                            {(t.isDone ? (<Label color="red" horizontal>closed</Label>):(<Label color="olive" horizontal>open</Label>))}
                                         </Table.Cell>
                                         <Table.Cell>
                                             <Label horizontal>

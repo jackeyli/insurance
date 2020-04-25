@@ -120,7 +120,7 @@ contract Shareholder {
                }
            }
            return profit.mul(myToken).div(totalToken);
-      }
+   }
    function isYearClaimedProfit(uint year) public view returns(bool) {
        return shareholderClaimHistory[msg.sender][year];
    }
@@ -141,7 +141,7 @@ contract Shareholder {
    }
    function getLastDividendStatus() public view returns(uint profit,
                                                        uint year,
-                                                       uint closeDividendTs){
+                                                       uint closeDividendTs) {
            DividendOp memory dividendOp;
            if(dividendOps.length == 0) {
                 return(0,0,0);

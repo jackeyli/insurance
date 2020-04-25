@@ -25,10 +25,7 @@ const HeaderTextStyle2 = {
 
 class Introduction extends Component {
   switchPage(pageName,params){
-    MessageStore.dispatch({
-      type:'switchPage',
-      data:{page:pageName,params:params}
-    });
+    window.history.pushState({params:params},null,pageName)
   }
   render(){
     return (
@@ -39,8 +36,11 @@ class Introduction extends Component {
           <div className="content">
             <h1 style={HeaderTextStyle2}>Insure your time, </h1>
             <h1 style={HeaderTextStyle1}>Insure your fortune.</h1>
-            <Button onClick={()=>{this.switchPage('Home')}} className="btn">
+            <Button onClick={()=>{window.history.pushState(null,null,"/Home")}} className="btn">
               BUY NOW!
+            </Button>
+            <Button onClick={()=>{window.open('./Instruction.pdf')}} className="btn">
+              Instructions
             </Button>
           </div>
         </div>

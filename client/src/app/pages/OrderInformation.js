@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import {Button, Label, Segment,Grid,Message} from "semantic-ui-react";
-import {waitForEvent} from "../utils/utils";
+import {waitForEvent, wait, callMethod} from "../utils/utils";
 import moment from 'moment';
 export class OrderInformation extends Component {
     state = {payoutAmount:0};
     componentDidMount = async()=>{
         try {
+            debugger;
             this.setState({isLoading:true});
             let order = await this.props.global.contract.methods
                     .getOrderInfo(this.props.param.order_id)
@@ -13,7 +14,6 @@ export class OrderInformation extends Component {
                 flightStatus = await this.props.global.contract.methods
                     .getFlightStatus(order.flightNo, order.expectedDepatureDate)
                     .call({from: this.props.global.accounts[0]});
-            debugger;
             if (flightStatus.checked) {
                 this.updateOrder(order.payoutAmount, flightStatus.expectedArriveDate, flightStatus.actArriveDate);
             }
@@ -52,10 +52,10 @@ export class OrderInformation extends Component {
     onCompensateClick = async()=>{
         try{
             this.setState({isLoading:true});
-            await this.props.global.contract.methods.claimCompensation(this.props.param.order_id).send({
-                from: this.props.global.accounts[0],
-                gas: 300000
-            });
+            await callMethod(this.props.global.contract.methods.claimCompensation(this.props.param.order_id),
+                {
+                    from: this.props.global.accounts[0]
+                });
             let order = await this.props.global.contract.methods
                 .getOrderInfo(this.props.param.order_id)
                 .call({from: this.props.global.accounts[0]});
@@ -72,25 +72,34 @@ export class OrderInformation extends Component {
                 blockNumber = (await this.props.global.web3.eth.getBlock('latest')).number,
                 flightNo = this.state.flightNo,
                 expectedDepatureDate = this.state.expectedDepatureDate;
-
-                await this.props.global.contract.methods.requestUpdate(this.props.param.order_id).send({
-                    from: this.props.global.accounts[0],
-                    gas: 300000,
-                    value:this.props.global.web3.utils.toWei("0.008",'ether')
-                });
+                await callMethod(this.props.global.contract.methods.requestUpdate(this.props.param.order_id),
+                    {
+                        from: this.props.global.accounts[0],
+                        value:this.props.global.web3.utils.toWei("0.008",'ether')
+                    });
                 let myEvent = await waitForEvent(this.props.global.contract, 'LogFlightStatusUpdate',
                     (t) => {
                         return t.returnValues.flightNo == flightNo &&
                             t.returnValues.expectedDepatureDate == expectedDepatureDate
                     }, blockNumber, 5, 120);
                 if(myEvent.returnValues.isSuccess) {
+                    this.setState({showMsg: true, messageType: 'positive', messageContent: 'The order information has been received, waiting for confirmation..'});
+                    if(this.props.global.networkName == "private") {
+                        await wait(15);
+                    } else {
+                        let oldBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number,
+                            curBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
+                            while(curBlockNumber == oldBlockNumber){
+                                await wait(1);
+                                curBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
+                            }
+                    }
                     this.updateOrder(this.state.payoutAmount, myEvent.returnValues.expectedArriveDate, myEvent.returnValues.actArriveDate);
                     this.setState({showMsg: true, messageType: 'positive', messageContent: 'Update order success.'});
                 } else {
                     this.setState({showMsg: true, messageType: 'negative', messageContent:
                             'Update order failed. This might cause by wrong flight No, wrong departure date or latency of data'});
                 }
-
         }finally{
             this.setState({isLoading:undefined});
         }
@@ -166,7 +175,7 @@ export class OrderInformation extends Component {
                             </Label>
                             <br/>
                             {this.state.compensateAmt !== undefined?
-                                this.props.global.web3.utils.fromWei(this.state.compensateAmt.toString(),'ether') : 'N/A'} ETH
+                                (+this.props.global.web3.utils.fromWei(this.state.compensateAmt.toString(),'ether')).trunc(9).toFixedNoZero(9) : 'N/A'} ETH
                         </Grid.Column>
                     </Grid.Row>
                     <Grid.Row columns={3}>
@@ -176,7 +185,7 @@ export class OrderInformation extends Component {
                         </Grid.Column>
                         <Grid.Column>
                             <Button loading={this.state.isLoading}
-                                    disabled = {!this.state.isLoading && this.state.statusUpdated ? undefined : true}
+                                    disabled = {!this.state.isLoading && this.state.statusUpdated && !this.state.isDone ? undefined : true}
                                     onClick={()=>{this.onCompensateClick();}}
                                     primary>Claim Compensation / Close Order</Button>
                         </Grid.Column>

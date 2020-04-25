@@ -1,5 +1,5 @@
 //const dieselPrice = artifacts.require('./DieselPrice.sol');
-const flightTest =  artifacts.require('./FlightTest.sol');
+const flightInsurance =  artifacts.require('./FlightInsurance.sol');
 const usingOraclize =  artifacts.require('./usingOraclize.sol');
 const strings = artifacts.require('./stringutils/strings.sol');
 const dateTime = artifacts.require('./library/DateTime.sol');
@@ -17,14 +17,12 @@ async function doDeploy(deployer, network) {
     await deployer.deploy(strings);
     await deployer.deploy(dateTime);
     await deployer.deploy(safeMath);
-    await deployer.link(strings, flightTest);
-    await deployer.link(dateTime, flightTest);
+    await deployer.link(strings, flightInsurance);
+    await deployer.link(dateTime, flightInsurance);
     await deployer.deploy(usingOraclize);
-    let flightTestContract = await deployer.deploy(flightTest,{gas: 6721975});
-    console.log(flightTestContract.address);
+    let flightTestContract = await deployer.deploy(flightInsurance,{gas: 6721975});
     await deployer.link(safeMath, shareHolder);
     let holderContract = await deployer.deploy(shareHolder,flightTestContract.address);
-    console.log(flightTestContract.address);
     await flightTestContract.setHolderContract(holderContract.address);
 }
 

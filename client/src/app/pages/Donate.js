@@ -1,19 +1,16 @@
 import React, { Component } from "react";
 import {Button, Icon, Input, Label, Table, Segment, Header, Grid, Item} from "semantic-ui-react";
 import moment from 'moment';
+import {wait,callMethod} from "../utils/utils";
 export class Donate extends Component {
     state = {profitBalance:0,dividendHistory:[],myProfitHistory: [],dividendProfit:0,donateEther:0,myBalance:0}
-    componentDidMount = ()=>{
+    componentDidMount = async ()=>{
         this.refresh();
     }
     onRequestDividend = async()=>{
             try {
                 this.setState({isLoading:true});
-                await this.props.global.contract.methods.dividend().send(
-                    {
-                        from: this.props.global.accounts[0],
-                        gas: 300000
-                    });
+                await callMethod(this.props.global.contract.methods.dividend(),{from:this.props.global.accounts[0]});
                 this.refresh();
             }finally{
                 this.setState({isLoading:false});
@@ -22,11 +19,8 @@ export class Donate extends Component {
     onGetMyShare = async(year)=>{
         try {
             this.setState({isLoading:true});
-            await this.props.global.shareholderContract.methods.getMyShareOfProfit(year).send(
-                {
-                    from: this.props.global.accounts[0],
-                    gas: 200000
-                });
+            await callMethod(this.props.global.shareholderContract.methods.getMyShareOfProfit(year)
+                ,{from:this.props.global.accounts[0]});
             this.refresh();
         }finally{
             this.setState({isLoading:false})
@@ -36,12 +30,18 @@ export class Donate extends Component {
         try {
             this.setState({isLoading:true});
             let amount = +this.inputDonateAmt.inputRef.value;
-            await this.props.global.contract.methods.donate().send(
-                {
-                    from: this.props.global.accounts[0],
-                    gas: 300000,
-                    value: this.props.global.web3.utils.toWei(amount.toString(), 'ether')
-                });
+            await callMethod(this.props.global.contract.methods.donate(),{from:this.props.global.accounts[0]
+                ,value:this.props.global.web3.utils.toWei(amount.toString(), 'ether')});
+            if(this.props.global.networkName == "private") {
+                await wait(15);
+            } else {
+                let oldBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number,
+                    curBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
+                while(curBlockNumber == oldBlockNumber){
+                    await wait(1);
+                    curBlockNumber = (await this.props.global.web3.eth.getBlock('latest')).number;
+                }
+            }
             this.refresh();
         }finally{
             this.setState({isLoading:false});
@@ -52,12 +52,10 @@ export class Donate extends Component {
         try {
             this.setState({isLoading:true});
             let amount = +this.inputWithdrawAmt.inputRef.value;
-            await this.props.global.shareholderContract.methods
-                .withDraw(this.props.global.web3.utils.toWei(amount.toString(), 'ether')).send(
-                {
-                    from: this.props.global.accounts[0],
-                    gas: 200000
-                });
+            callMethod(this.props.global.shareholderContract.methods
+                .withDraw(this.props.global.web3.utils.toWei(amount.toString(), 'ether')),{
+                from: this.props.global.accounts[0]
+            });
             this.refresh();
         }finally{
             this.setState({isLoading:false});
@@ -67,89 +65,94 @@ export class Donate extends Component {
         this.setState({donateEther:+this.inputDonateAmt.inputRef.value});
     }
     refresh = async()=>{
-       let myToken = await this.props.global.shareholderContract.methods
-               .getShareToken(this.props.global.accounts[0]).call(
-            {
-                from: this.props.global.accounts[0]
-            });
-       let totalToken = await this.props.global.shareholderContract.methods.totalShareholderToken().call(
-               {
-                   from: this.props.global.accounts[0]
-               }
-           );
-       let nextPriceTs = await this.props.global.shareholderContract.methods.nextPriceTs().call(
-               {
-                   from: this.props.global.accounts[0]
-               }
-           );
-       let currentTokenPrice = await this.props.global.shareholderContract.methods.getCurrentTokenPrice().call(
-               {
-                   from: this.props.global.accounts[0]
-               }
-           );
-       let dividendLen =  await this.props.global.contract.methods.getDividendLen().call(
-           {
-               from: this.props.global.accounts[0]
-           }
-       );
-       let dividendPromises = [];
-       for(let i = 0; i < dividendLen; i ++){
-           dividendPromises.push((async(idx)=>{
-               return await this.props.global.contract.methods.getDividendHistory(idx).call(
-                   {
-                       from: this.props.global.accounts[0]
-                   }
-               );
-           })(i))
-       }
-       let dividendHistory = (await Promise.all(dividendPromises)) ;
-       let dividendStatus = await this.props.global.shareholderContract.methods.getLastDividendStatus().call(
-               {
-                   from: this.props.global.accounts[0]
-               }
-           );
-       let myShareOfProfitsPromises = [];
-       for(let i = 0; i < dividendHistory.length; i ++){
-           myShareOfProfitsPromises.push((async(hist)=>{
-              let myProfit = await this.props.global.shareholderContract.methods.getMyAmtOfShareOfProfit(hist.year).call(
-                   {
-                       from:this.props.global.accounts[0]
-                   }
-               );
-              let isClaimed = await this.props.global.shareholderContract.methods.isYearClaimedProfit(hist.year).call(
-                  {
-                      from:this.props.global.accounts[0]
-                  }
-              );
-              return {profit:myProfit,isClaimed:isClaimed,year:hist.year};
-           })(dividendHistory[i]))
-       }
-       let myBalance = await this.props.global.shareholderContract.methods.getMyBalance().call(
-           {
-               from:this.props.global.accounts[0]
-           }
-       );
-       let myProfitHistory = await Promise.all(myShareOfProfitsPromises);
-       let dividendCloseTime = moment(new Date(dividendStatus.closeDividendTs * 1000)).format('YYYY-MM-DD HH:mm:ss');
-       let dividendOpen = new Date().getTime() <= (dividendStatus.startTs + 31 * 86400) * 1000;
-       let dividendProfit = dividendStatus.profit;
-       let dividendYear = dividendStatus.year;
-       this.setState(
-           {
-               myToken:myToken,
-               totalToken:totalToken,
-               dividendHistory:dividendHistory,
-               dividendStatus:dividendStatus,
-               dividendCloseTime:dividendCloseTime,
-               dividendOpen:dividendOpen,
-               dividendProfit:dividendProfit,
-               dividendYear:dividendYear,
-               myProfitHistory:myProfitHistory,
-               nextPriceTs:nextPriceTs,
-               currentTokenPrice:currentTokenPrice,
-               myBalance:myBalance
-           });
-       this.props.global.refreshContractState();
+        this.setState({isLoading:true});
+        try {
+            let myToken = await this.props.global.shareholderContract.methods
+                .getShareToken(this.props.global.accounts[0]).call(
+                    {
+                        from: this.props.global.accounts[0]
+                    });
+            let totalToken = await this.props.global.shareholderContract.methods.totalShareholderToken().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let nextPriceTs = await this.props.global.shareholderContract.methods.nextPriceTs().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let currentTokenPrice = await this.props.global.shareholderContract.methods.getCurrentTokenPrice().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let dividendLen = await this.props.global.contract.methods.getDividendLen().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let dividendPromises = [];
+            for (let i = 0; i < dividendLen; i++) {
+                dividendPromises.push((async (idx) => {
+                    return await this.props.global.contract.methods.getDividendHistory(idx).call(
+                        {
+                            from: this.props.global.accounts[0]
+                        }
+                    );
+                })(i))
+            }
+            let dividendHistory = (await Promise.all(dividendPromises));
+            let dividendStatus = await this.props.global.shareholderContract.methods.getLastDividendStatus().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let myShareOfProfitsPromises = [];
+            for (let i = 0; i < dividendHistory.length; i++) {
+                myShareOfProfitsPromises.push((async (hist) => {
+                    let myProfit = await this.props.global.shareholderContract.methods.getMyAmtOfShareOfProfit(hist.year).call(
+                        {
+                            from: this.props.global.accounts[0]
+                        }
+                    );
+                    let isClaimed = await this.props.global.shareholderContract.methods.isYearClaimedProfit(hist.year).call(
+                        {
+                            from: this.props.global.accounts[0]
+                        }
+                    );
+                    return {profit: myProfit, isClaimed: isClaimed, year: hist.year};
+                })(dividendHistory[i]))
+            }
+            let myBalance = await this.props.global.shareholderContract.methods.getMyBalance().call(
+                {
+                    from: this.props.global.accounts[0]
+                }
+            );
+            let myProfitHistory = await Promise.all(myShareOfProfitsPromises);
+            let dividendCloseTime = moment(new Date(dividendStatus.closeDividendTs * 1000)).format('YYYY-MM-DD HH:mm:ss');
+            let dividendOpen = new Date().getTime() <= (dividendStatus.startTs + 31 * 86400) * 1000;
+            let dividendProfit = dividendStatus.profit;
+            let dividendYear = dividendStatus.year;
+            this.setState(
+                {
+                    myToken: myToken,
+                    totalToken: totalToken,
+                    dividendHistory: dividendHistory,
+                    dividendStatus: dividendStatus,
+                    dividendCloseTime: dividendCloseTime,
+                    dividendOpen: dividendOpen,
+                    dividendProfit: dividendProfit,
+                    dividendYear: dividendYear,
+                    myProfitHistory: myProfitHistory,
+                    nextPriceTs: nextPriceTs,
+                    currentTokenPrice: currentTokenPrice,
+                    myBalance: myBalance
+                });
+            this.props.global.refreshContractState();
+        }finally {
+            this.setState({isLoading:false});
+        }
     }
     render() {
         return (
@@ -157,12 +160,12 @@ export class Donate extends Component {
                 <Segment style={{margin: 10,background:'grey'}}>
                     <Header as="h2" style={{color:'white'}}>
                         <Icon name="ethereum"></Icon>
-                        Donating, Get Share！
+                        Investing, Get Share！
                     </Header>
                 </Segment>
                 <Segment style={{margin: 10}}>
 
-                    <Label attached='top left' color="blue">Donate</Label>
+                    <Label attached='top left' color="blue">Invest</Label>
                 <Grid stackable>
                     <Grid.Row columns={2}>
                         <Grid.Column>
@@ -170,7 +173,7 @@ export class Donate extends Component {
                         {this.state.myToken} / {this.state.totalToken}</span>
                             <br/>
                     <span><Label style={{margin:10}}>My Balance:</Label>
-                    {this.props.global.web3.utils.fromWei(this.state.myBalance.toString(),'ether')} ETH</span>
+                    {(+this.props.global.web3.utils.fromWei(this.state.myBalance.toString(),'ether')).trunc(9).toFixedNoZero(9)} ETH</span>
                             <br/>
                             <Input ref={(inputWithdrawAmt)=>this.inputWithdrawAmt = inputWithdrawAmt}icon type="number"
                                    placeholder='Input the amount to withdraw' style={{margin:10}}>
@@ -196,7 +199,7 @@ export class Donate extends Component {
                         loading={this.state.isLoading}
                         disabled={this.state.isLoading ? true:undefined}
                         primary style={{margin:10}} onClick={()=>{this.onDonateClick()}}>
-                        Donate
+                        Invest
                     </Button>
                         </Grid.Column>
                         <Grid.Column>
@@ -242,7 +245,7 @@ export class Donate extends Component {
                                             {hist.year}
                                         </Table.Cell>
                                         <Table.Cell>
-                                            {this.props.global.web3.utils.fromWei(hist.profit,'ether')} ETH
+                                            {(+this.props.global.web3.utils.fromWei(hist.profit,'ether')).trunc(9).toFixedNoZero(9)} ETH
                                         </Table.Cell>
                                         <Table.Cell>
                                             {moment(new Date(hist.timestamp * 1000)).format('YYYY-MM-DD HH:mm:ss')}
@@ -276,9 +279,9 @@ export class Donate extends Component {
                                                                 </Table.Cell>
                                                                 <Table.Cell>
                                                                     {
-                                                                        this.props.global.web3.utils.fromWei
+                                                                        (+this.props.global.web3.utils.fromWei
                                                                         (hist.profit.toString(),
-                                                                        'ether')
+                                                                        'ether')).trunc(9).toFixedNoZero(9)
                                                                     } ETH
                                                                 </Table.Cell>
                                                                 <Table.Cell>

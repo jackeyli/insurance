@@ -20,24 +20,9 @@ contract('Solidity Contract Tests', (accounts) => {
           console.log(sender);
           console.log(flightNo);
       });
-      it('Should not accept price larger than balance / 5', async() =>{
-          contract = await flightTest.deployed();
-          await contract.send(1e17 + 1000,{from:accounts[0]});
-          try {
-              await contract.insure("MU571", 132320267, {
-                  from: accounts[1],
-                  value: 3e16,
-                  gas: 2000000
-              });
-
-          } catch(e) {
-              return;
-          }
-          assert.fail("Should not high price");
-      });
      it('Should not accept too low price', async() =>{
          contract = await flightTest.deployed();
-          await contract.send(2e19 + 1000,{from:accounts[0]});
+          await contract.send(2e16 + 1000,{from:accounts[0]});
           try {
               await contract.insure("MU571", 132320267, {
                   from: accounts[1],
@@ -49,19 +34,6 @@ contract('Solidity Contract Tests', (accounts) => {
           }
          assert.fail("accept too low price");
      });
-      it('Should not accept too high price', async() =>{
-          contract = await flightTest.deployed();
-          try {
-              await contract.insure("MU571", 132320267, {
-                  from: accounts[1],
-                  value: 2e19,
-                  gas: 2000000
-              });
-          } catch(e) {
-              return;
-          }
-          assert.fail("accept too high price");
-      });
       it('Should insure ahead of time', async() =>{
           contract = await flightTest.deployed();
           let dt = new Date(new Date().getTime() + 76400000),
@@ -87,10 +59,10 @@ contract('Solidity Contract Tests', (accounts) => {
           assert.equal(user,accounts[1]);
           assert.equal(paidAmt,1e17);
       });
-      it('Should compensate when delay more than an hour',async () =>{
+      it('Should compensate when delay more than half an hour',async () =>{
           contract = await flightTest.deployed();
           const {args:{order_id,flightNo,expectedDepatureDate,user,paidAmt}} =
-              (await contract.insureTest("MU572",132317717,"2019-02-21 16:50",
+              (await contract.insureTest("MU571",132317717,"2019-02-21 16:50",
               "2019-02-21 17:55",{from:accounts[1],value:1e16,gas:2000000})).receipt.logs[0];
           await contract.claimCompensation(order_id,{from:accounts[1],gas:1200000});
           let block = await web3.eth.getBlock("latest");
@@ -98,7 +70,7 @@ contract('Solidity Contract Tests', (accounts) => {
           assert.equal(isSuccess,true);
           assert.equal(amount,1e17);
       });
-      it('Should compensate when delay more than half an hour',async () =>{
+      it('Should compensate when delay more than an hour',async () =>{
           contract = await flightTest.deployed();
           let {args:{order_id}} = (await contract.insureTest("MU573",132317717,"2019-02-21 16:50",
               "2019-02-21 17:25",{from:accounts[1],value:1e16,gas:2000000})).receipt.logs[0];
