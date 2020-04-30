@@ -84,14 +84,11 @@ export class PageRouter extends Component {
     render(){
         if(this.state.routes.length == 0)
             return null;
-        let thisPageComp = this.getPage(this.state.current.page || this.props.indexPage);
-        let thisPage = React.createElement(
-            thisPageComp.component,
-            _.merge({param:this.state.current.params || null,asyncComponent:thisPageComp.loadercomponent},this.props));
-        let mainComp = React.createElement(this.props.component,_.merge({pageContent:thisPage,currentPageName:
-                    this.state.current.page || this.props.indexPage,param:this.state.current.params || null},this.props));
-        return (
-            <div>{mainComp}</div>
-        )
+        let ThisPageComp = this.getPage(this.state.current.page || this.props.indexPage).component;
+        const Page = (<ThisPageComp {...this.props} param={this.state.current.params || null}></ThisPageComp>)
+        const MainPage = this.props.component
+        const otherProps = {pageContent:Page,currentPageName:
+                                               this.state.current.page || this.props.indexPage,param:this.state.current.params || null}
+        return <MainPage {...otherProps} {...this.props}></MainPage>
     }
 }

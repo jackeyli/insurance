@@ -1,34 +1,24 @@
 import React, { Component } from "react";
-export class AsyncLoader extends Component {
+
+
+const AsyncLoader = (Wrapped) => {return class extends Component {
     constructor(props){
-        super(props)
-        this.state = {asyncComponent:null};
-    }
-    componentWillReceiveProps =(props) =>{
-        this.state = {asyncComponent:null};
-    }
-    componentDidMount = ()=> {
-        var thisCmp = this
-        if(this.props.asyncComponent && this.state.asyncComponent == null){
-            this.props.asyncComponent.then((cmp)=>{
-                thisCmp.setState({asyncComponent:cmp})
-            })
+            super(props)
+            this.state = {component:null}
         }
-    }
-    render(){
-        if(this.state.asyncComponent == null){
-             var thisCmp = this
-             this.props.asyncComponent.then((cmp)=>{
-                  thisCmp.setState({asyncComponent:cmp})
-             })
-             return (<div></div>)
-        } else {
-            let renderCmp = React.createElement(this.state.asyncComponent,this.props)
-            return (<div>{renderCmp}</div>)
+        componentDidMount = async() => {
+            var wrappedClass = await Wrapped()
+            this.setState({component:wrappedClass})
         }
-    }
+        render = () =>{
+            let WrappedClass = this.state.component
+            if (WrappedClass == null) {
+                return (<div></div>)
+            } else {
+                return <WrappedClass {...this.props}/>
+            }
+        }
+}
 }
 
-AsyncLoader.defaultProps = {
-    asyncComponent:null
-}
+export default AsyncLoader

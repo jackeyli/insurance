@@ -3,6 +3,7 @@ import {HeaderCompoment} from './Header';
 import {Grid,Button,Statistic,Header,Icon} from 'semantic-ui-react';
 import './semantic.min.css';
 import './App.css';
+import './utils/utils';
 import MessageStore from "./components/store/MessageStore";
 export class Home extends Component {
     state={contractBalance:0,contractTotalProfit:0,shareToken:0}
